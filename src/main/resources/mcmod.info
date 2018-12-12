@@ -1,0 +1,16 @@
+[
+{
+  "modid": "coloredchests",
+  "name": "Colored Chests",
+  "description": "Adds colored chests.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["its_meow"],
+  "credits": "its_meow: Programming, BuiltBrokenModding: Mascot, DarkCow: Project Owner",
+  "logoFile": "coloredchestsicon.png",
+  "screenshots": [],
+  "dependencies": []
+}
+]
