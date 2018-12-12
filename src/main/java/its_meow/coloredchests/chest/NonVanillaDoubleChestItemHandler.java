@@ -1,30 +1,30 @@
 package its_meow.coloredchests.chest;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.world.World;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
-
 import java.lang.ref.WeakReference;
-
-import com.google.common.base.Objects;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class NonVanillaDoubleChestHandler extends WeakReference<TileEntityColoredChest> implements IItemHandlerModifiable
+import com.google.common.base.Objects;
+
+import net.minecraft.block.Block;
+import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
+
+public class NonVanillaDoubleChestItemHandler extends WeakReference<TileEntityColoredChest> implements IItemHandlerModifiable
 {
     // Dummy cache value to signify that we have checked and definitely found no adjacent chests
-    public static final NonVanillaDoubleChestHandler NO_ADJACENT_CHESTS_INSTANCE = new NonVanillaDoubleChestHandler(null, null, false);
+    public static final NonVanillaDoubleChestItemHandler NO_ADJACENT_CHESTS_INSTANCE = new NonVanillaDoubleChestItemHandler(null, null, false);
     private final boolean mainChestIsUpper;
     private final TileEntityColoredChest mainChest;
     private final int hashCode;
 
-    public NonVanillaDoubleChestHandler(@Nullable TileEntityColoredChest mainChest, @Nullable TileEntityColoredChest other, boolean mainChestIsUpper)
+    public NonVanillaDoubleChestItemHandler(@Nullable TileEntityColoredChest mainChest, @Nullable TileEntityColoredChest other, boolean mainChestIsUpper)
     {
         super(other);
         this.mainChest = mainChest;
@@ -33,7 +33,7 @@ public class NonVanillaDoubleChestHandler extends WeakReference<TileEntityColore
     }
 
     @Nullable
-    public static NonVanillaDoubleChestHandler get(TileEntityColoredChest chest)
+    public static NonVanillaDoubleChestItemHandler get(TileEntityColoredChest chest)
     {
         World world = chest.getWorld();
         BlockPos pos = chest.getPos();
@@ -56,7 +56,7 @@ public class NonVanillaDoubleChestHandler extends WeakReference<TileEntityColore
                 if (otherTE instanceof TileEntityColoredChest)
                 {
                     TileEntityColoredChest otherChest = (TileEntityColoredChest) otherTE;
-                    return new NonVanillaDoubleChestHandler(chest, otherChest,
+                    return new NonVanillaDoubleChestItemHandler(chest, otherChest,
                             enumfacing != net.minecraft.util.EnumFacing.WEST && enumfacing != net.minecraft.util.EnumFacing.NORTH);
 
                 }
@@ -190,7 +190,7 @@ public class NonVanillaDoubleChestHandler extends WeakReference<TileEntityColore
         if (o == null || getClass() != o.getClass())
             return false;
 
-        NonVanillaDoubleChestHandler that = (NonVanillaDoubleChestHandler) o;
+        NonVanillaDoubleChestItemHandler that = (NonVanillaDoubleChestItemHandler) o;
 
         if (hashCode != that.hashCode)
             return false;

@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=east":  { "model": "minecraft:oak_planks" },
+        "facing=west":  { "model": "minecraft:oak_planks" },
+        "facing=north":  { "model": "minecraft:oak_planks" },
+        "facing=south":  { "model": "minecraft:oak_planks" }
+    }
+}

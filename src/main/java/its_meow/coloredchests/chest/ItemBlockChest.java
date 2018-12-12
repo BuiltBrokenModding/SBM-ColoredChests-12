@@ -24,26 +24,15 @@ public class ItemBlockChest extends ItemBlock
     public ItemBlockChest(Block p_i45326_1_)
     {
         super(p_i45326_1_);
-        this.setMaxDamage(0);
-        this.setHasSubtypes(true);
+        this.setTileEntityItemStackRenderer(new TileEntityItemStackRendererColoredChest());
     }
 
     @SideOnly(Side.CLIENT)
     @Override
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> list, ITooltipFlag flagIn)
     {
-        if (stack != null && stack.getTagCompound() != null)
-        {
-            if (stack.getTagCompound().hasKey("rgb"))
-            {
-                Color color = ColoredChestsMod.getColor(stack.getTagCompound().getInteger("rgb"));
-                list.add("R: " + color.getRed() + " G: " + color.getGreen() + " B: " + color.getBlue());
-            }
-
-            if (stack.getTagCompound().hasKey("colorName"))
-            {
-                list.add("N: " + stack.getTagCompound().getString("colorName"));
-            }
-        }
+        
     }
+    
+    
 }

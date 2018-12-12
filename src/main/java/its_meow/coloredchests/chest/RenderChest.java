@@ -25,6 +25,8 @@ public class RenderChest extends TileEntitySpecialRenderer<TileEntityColoredChes
 	public static final ModelChest modelChest = new ModelChest();
 	public static final ModelChest modelLargeChest = new ModelLargeChest();
 
+	
+	
 	@Override
 	public void render(TileEntityColoredChest te, double x, double y, double z, float partialTicks, int destroyStage, float alpha)
 	{
@@ -38,9 +40,9 @@ public class RenderChest extends TileEntitySpecialRenderer<TileEntityColoredChes
             Block block = te.getBlockType();
             i = te.getBlockMetadata();
 
-            if (block instanceof BlockChest && i == 0)
+            if (block instanceof BlockColoredChest && i == 0)
             {
-                ((BlockChest)block).checkForSurroundingChests(te.getWorld(), te.getPos(), te.getWorld().getBlockState(te.getPos()));
+                ((BlockColoredChest)block).checkForSurroundingChests(te.getWorld(), te.getPos(), te.getWorld().getBlockState(te.getPos()));
                 i = te.getBlockMetadata();
             }
 
@@ -98,6 +100,7 @@ public class RenderChest extends TileEntitySpecialRenderer<TileEntityColoredChes
             {
                 GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
             }
+            
             if (te.color != null)
 			{
 				float r = (float)te.color.getRed() / 255f;

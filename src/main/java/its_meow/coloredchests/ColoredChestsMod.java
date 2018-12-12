@@ -27,16 +27,16 @@ public class ColoredChestsMod {
 
 	@Instance(Ref.MOD_ID) 
 	public static ColoredChestsMod mod;
-	
+
 	@SidedProxy(clientSide = Ref.CLIENT_PROXY_C, serverSide = Ref.SERVER_PROXY_C)
 	public static its_meow.coloredchests.proxy.CommonProxy proxy;
 
 	public static CreativeTab tab = new CreativeTab("ColoredChests");
 
 	public static Logger logger;
-	
 
-	
+
+
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		logger = LogManager.getLogger("coloredchests");
@@ -47,45 +47,47 @@ public class ColoredChestsMod {
 	public void init(FMLInitializationEvent e) {
 		proxy.init(e);
 	}
-	
+
 	@EventHandler
 	public void postInit(FMLPostInitializationEvent e) {
 		proxy.postInit(e);
+		/*
 		for (int i = 0; i < ItemDye.DYE_COLORS.length; i++)
-        {
-            ItemStack stack = new ItemStack(BlockRegistry.blockChest);
-            stack.setTagCompound(new NBTTagCompound());
-            stack.getTagCompound().setInteger("rgb", ItemDye.DYE_COLORS[i]);
+		{
+			ItemStack stack = new ItemStack(BlockRegistry.blockChest);
+			stack.setTagCompound(new NBTTagCompound());
+			stack.getTagCompound().setInteger("rgb", ItemDye.DYE_COLORS[i]);
 
-            GameRegistry.addShapedRecipe(new ResourceLocation(Ref.MOD_ID + ":fromchest" + ItemDye.DYE_COLORS[i]), new ResourceLocation(Ref.MOD_ID), stack, "d", "c", 'd', new ItemStack(Items.DYE, 1, i), 'c', Blocks.CHEST);
-            for (int b = 0; b < ItemDye.DYE_COLORS.length; b++)
-            {
-                if (b != i)
-                {
-                    ItemStack stack2 = new ItemStack(BlockRegistry.blockChest);
-                    stack2.setTagCompound(new NBTTagCompound());
-                    stack2.getTagCompound().setInteger("rgb", ItemDye.DYE_COLORS[b]);
-                    GameRegistry.addShapedRecipe(new ResourceLocation(Ref.MOD_ID + ":tochest" + ItemDye.DYE_COLORS[b]), new ResourceLocation(Ref.MOD_ID), stack, "d", "c", 'd', new ItemStack(Items.DYE, 1, i), 'c', stack2);
-                }
-            }
-}
+			GameRegistry.addShapedRecipe(new ResourceLocation(Ref.MOD_ID + ":fromchest" + ItemDye.DYE_COLORS[i]), new ResourceLocation(Ref.MOD_ID), stack, "d", "c", 'd', new ItemStack(Items.DYE, 1, i), 'c', Blocks.CHEST);
+			for (int b = 0; b < ItemDye.DYE_COLORS.length; b++)
+			{
+				if (b != i)
+				{
+					ItemStack stack2 = new ItemStack(BlockRegistry.blockChest);
+					stack2.setTagCompound(new NBTTagCompound());
+					stack2.getTagCompound().setInteger("rgb", ItemDye.DYE_COLORS[b]);
+					GameRegistry.addShapedRecipe(new ResourceLocation(Ref.MOD_ID + ":tochest" + ItemDye.DYE_COLORS[b]), new ResourceLocation(Ref.MOD_ID), stack, "d", "c", 'd', new ItemStack(Items.DYE, 1, i), 'c', stack2);
+				}
+			}
+		}
+		*/
 	}
-	
+
 	public static Color getColor(int rgb)
-    {
-        return new Color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
-    }
+	{
+		return new Color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+	}
 
-    public static int getRGB(Color color)
-    {
-        int rgb = color.getRed();
-        rgb = (rgb << 8) + color.getGreen();
-        rgb = (rgb << 8) + color.getBlue();
-        return rgb;
-    }
+	public static int getRGB(Color color)
+	{
+		int rgb = color.getRed();
+		rgb = (rgb << 8) + color.getGreen();
+		rgb = (rgb << 8) + color.getBlue();
+		return rgb;
+	}
 
-    public static boolean doColorsMatch(Color a, Color b)
-    {
-        return a == b || a != null && b != null && a.getRGB() == b.getRGB();
-}
+	public static boolean doColorsMatch(Color a, Color b)
+	{
+		return a == b || a != null && b != null && a.getRGB() == b.getRGB();
+	}
 }
