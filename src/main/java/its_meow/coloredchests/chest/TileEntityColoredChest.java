@@ -1,7 +1,10 @@
 package its_meow.coloredchests.chest;
 
+import java.awt.Color;
+
 import javax.annotation.Nullable;
 
+import its_meow.coloredchests.ColoredChestsMod;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -13,6 +16,8 @@ import net.minecraft.inventory.InventoryLargeChest;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityLockableLoot;
 import net.minecraft.util.EnumFacing;
@@ -26,210 +31,299 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 
 public class TileEntityColoredChest extends TileEntityLockableLoot implements ITickable {
-	
-	private final int color;
-	
-	public TileEntityColoredChest(int color) {
-		this.color = color;
-	}
 
 	private NonNullList<ItemStack> chestContents = NonNullList.<ItemStack>withSize(27, ItemStack.EMPTY);
-    /** Determines if the check for adjacent chests has taken place. */
-    public boolean adjacentChestChecked;
-    /** Contains the chest tile located adjacent to this one (if any) */
-    public TileEntityColoredChest adjacentChestZNeg;
-    /** Contains the chest tile located adjacent to this one (if any) */
-    public TileEntityColoredChest adjacentChestXPos;
-    /** Contains the chest tile located adjacent to this one (if any) */
-    public TileEntityColoredChest adjacentChestXNeg;
-    /** Contains the chest tile located adjacent to this one (if any) */
-    public TileEntityColoredChest adjacentChestZPos;
-    /** The current angle of the lid (between 0 and 1) */
-    public float lidAngle;
-    /** The angle of the lid last tick */
-    public float prevLidAngle;
-    /** The number of players currently using this chest */
-    public int numPlayersUsing;
-    /** Server sync counter (once per 20 ticks) */
-    private int ticksSinceSync;
+	/** Determines if the check for adjacent chests has taken place. */
+	public boolean adjacentChestChecked;
+	/** Contains the chest tile located adjacent to this one (if any) */
+	public TileEntityColoredChest adjacentChestZNeg;
+	/** Contains the chest tile located adjacent to this one (if any) */
+	public TileEntityColoredChest adjacentChestXPos;
+	/** Contains the chest tile located adjacent to this one (if any) */
+	public TileEntityColoredChest adjacentChestXNeg;
+	/** Contains the chest tile located adjacent to this one (if any) */
+	public TileEntityColoredChest adjacentChestZPos;
+	/** The current angle of the lid (between 0 and 1) */
+	public float lidAngle;
+	/** The angle of the lid last tick */
+	public float prevLidAngle;
+	/** The number of players currently using this chest */
+	public int numPlayersUsing;
+	/** Server sync counter (once per 20 ticks) */
+	private int ticksSinceSync;
 
-    /**
-     * Returns the number of slots in the inventory.
-     */
-    public int getSizeInventory()
-    {
-        return 27;
-    }
+	public Color color = Color.WHITE;
 
-    public boolean isEmpty()
-    {
-        for (ItemStack itemstack : this.chestContents)
-        {
-            if (!itemstack.isEmpty())
-            {
-                return false;
-            }
-        }
+	public TileEntityColoredChest() {
+	}
+	
+	@Override
+	public SPacketUpdateTileEntity getUpdatePacket() {
+		NBTTagCompound tag = new NBTTagCompound();
+		this.writeToNBT(tag);
+		return new SPacketUpdateTileEntity(pos, 1, tag);
+	}
 
-        return true;
-    }
 
-    /**
-     * Get the name of this object. For players this returns their username
-     */
-    public String getName()
-    {
-        return this.hasCustomName() ? this.customName : "container.chest";
-    }
+	@Override
+	public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity packet) {
+		readFromNBT(packet.getNbtCompound());
+		world.scheduleUpdate(this.pos, this.blockType, 100);
+	}
+	
+	@Override
+	public void handleUpdateTag(NBTTagCompound tag) {
+		this.readFromNBT(tag);
+	}
+	
+	@Override
+	public NBTTagCompound getUpdateTag() {
+		NBTTagCompound tag = new NBTTagCompound();
+        this.writeToNBT(tag);
+        return tag;
+	}
 
-    public static void registerFixesChest(DataFixer fixer)
-    {
-        fixer.registerWalker(FixTypes.BLOCK_ENTITY, new ItemStackDataLists(TileEntityColoredChest.class, new String[] {"Items"}));
-    }
 
-    public void readFromNBT(NBTTagCompound compound)
-    {
-        super.readFromNBT(compound);
-        this.chestContents = NonNullList.<ItemStack>withSize(this.getSizeInventory(), ItemStack.EMPTY);
+	/*
+	 **
+	 * Returns the number of slots in the inventory.
+	 */
+	public int getSizeInventory()
+	{
+		return 27;
+	}
 
-        if (!this.checkLootAndRead(compound))
-        {
-            ItemStackHelper.loadAllItems(compound, this.chestContents);
-        }
+	public boolean isEmpty()
+	{
+		for (ItemStack itemstack : this.chestContents)
+		{
+			if (!itemstack.isEmpty())
+			{
+				return false;
+			}
+		}
 
-        if (compound.hasKey("CustomName", 8))
-        {
-            this.customName = compound.getString("CustomName");
-        }
-    }
+		return true;
+	}
 
-    public NBTTagCompound writeToNBT(NBTTagCompound compound)
-    {
-        super.writeToNBT(compound);
+	/**
+	 * Get the name of this object. For players this returns their username
+	 */
+	public String getName()
+	{
+		return this.hasCustomName() ? this.customName : "container.chest";
+	}
 
-        if (!this.checkLootAndWrite(compound))
-        {
-            ItemStackHelper.saveAllItems(compound, this.chestContents);
-        }
+	public static void registerFixesChest(DataFixer fixer)
+	{
+		fixer.registerWalker(FixTypes.BLOCK_ENTITY, new ItemStackDataLists(TileEntityColoredChest.class, new String[] {"Items"}));
+	}
 
-        if (this.hasCustomName())
-        {
-            compound.setString("CustomName", this.customName);
-        }
 
-        return compound;
-    }
+	/**
+	 * Returns the maximum stack size for a inventory slot. Seems to always be 64, possibly will be extended.
+	 */
+	public int getInventoryStackLimit()
+	{
+		return 64;
+	}
 
-    /**
-     * Returns the maximum stack size for a inventory slot. Seems to always be 64, possibly will be extended.
-     */
-    public int getInventoryStackLimit()
-    {
-        return 64;
-    }
+	public void updateContainingBlockInfo()
+	{
+		super.updateContainingBlockInfo();
+		this.adjacentChestChecked = false;
+		doubleChestHandler = null;
+	}
 
-    public void updateContainingBlockInfo()
-    {
-        super.updateContainingBlockInfo();
-        this.adjacentChestChecked = false;
-        doubleChestHandler = null;
-    }
+	@SuppressWarnings("incomplete-switch")
+	private void setNeighbor(TileEntityColoredChest chestTe, EnumFacing side)
+	{
+		if (chestTe.isInvalid())
+		{
+			this.adjacentChestChecked = false;
+		}
+		else if (this.adjacentChestChecked)
+		{
+			switch (side)
+			{
+			case NORTH:
 
-    @SuppressWarnings("incomplete-switch")
-    private void setNeighbor(TileEntityColoredChest chestTe, EnumFacing side)
-    {
-        if (chestTe.isInvalid())
-        {
-            this.adjacentChestChecked = false;
-        }
-        else if (this.adjacentChestChecked)
-        {
-            switch (side)
-            {
-                case NORTH:
+				if (this.adjacentChestZNeg != chestTe)
+				{
+					this.adjacentChestChecked = false;
+				}
 
-                    if (this.adjacentChestZNeg != chestTe)
-                    {
-                        this.adjacentChestChecked = false;
-                    }
+				break;
+			case SOUTH:
 
-                    break;
-                case SOUTH:
+				if (this.adjacentChestZPos != chestTe)
+				{
+					this.adjacentChestChecked = false;
+				}
 
-                    if (this.adjacentChestZPos != chestTe)
-                    {
-                        this.adjacentChestChecked = false;
-                    }
+				break;
+			case EAST:
 
-                    break;
-                case EAST:
+				if (this.adjacentChestXPos != chestTe)
+				{
+					this.adjacentChestChecked = false;
+				}
 
-                    if (this.adjacentChestXPos != chestTe)
-                    {
-                        this.adjacentChestChecked = false;
-                    }
+				break;
+			case WEST:
 
-                    break;
-                case WEST:
+				if (this.adjacentChestXNeg != chestTe)
+				{
+					this.adjacentChestChecked = false;
+				}
+			}
+		}
+	}
 
-                    if (this.adjacentChestXNeg != chestTe)
-                    {
-                        this.adjacentChestChecked = false;
-                    }
-            }
-        }
-    }
+	@Override
+	public void readFromNBT(NBTTagCompound nbt)
+	{
+		super.readFromNBT(nbt);
+		this.chestContents = NonNullList.<ItemStack>withSize(this.getSizeInventory(), ItemStack.EMPTY);
 
-    /**
-     * Performs the check for adjacent chests to determine if this chest is double or not.
-     */
-    public void checkForAdjacentChests()
-    {
-        if (!this.adjacentChestChecked)
-        {
-            if (this.world == null || !this.world.isAreaLoaded(this.pos, 1)) return; // Forge: prevent loading unloaded chunks when checking neighbors
-            this.adjacentChestChecked = true;
-            this.adjacentChestXNeg = this.getAdjacentChest(EnumFacing.WEST);
-            this.adjacentChestXPos = this.getAdjacentChest(EnumFacing.EAST);
-            this.adjacentChestZNeg = this.getAdjacentChest(EnumFacing.NORTH);
-            this.adjacentChestZPos = this.getAdjacentChest(EnumFacing.SOUTH);
-        }
-    }
+		if (!this.checkLootAndRead(nbt))
+		{
+			ItemStackHelper.loadAllItems(nbt, this.chestContents);
+		}
 
-    @Nullable
-    protected TileEntityColoredChest getAdjacentChest(EnumFacing side)
-    {
-        BlockPos blockpos = this.pos.offset(side);
+		if (nbt.hasKey("CustomName", 8))
+		{
+			this.customName = nbt.getString("CustomName");
+		}
+		if (nbt.hasKey("rgb"))
+		{
+			this.color = new Color(nbt.getInteger("rgb"));
+		}
+	}
 
-        if (this.isChestAt(blockpos))
-        {
-            TileEntity tileentity = this.world.getTileEntity(blockpos);
+	@Override
+	public NBTTagCompound writeToNBT(NBTTagCompound nbt)
+	{
+		super.writeToNBT(nbt);
+		
+		if (!this.checkLootAndWrite(nbt))
+		{
+			ItemStackHelper.saveAllItems(nbt, this.chestContents);
+		}
 
-            if (tileentity instanceof TileEntityColoredChest)
-            {
-                TileEntityColoredChest TileEntityColoredChest = (TileEntityColoredChest)tileentity;
-                TileEntityColoredChest.setNeighbor(this, side.getOpposite());
-                return TileEntityColoredChest;
-            }
-        }
+		if (this.hasCustomName())
+		{
+			nbt.setString("CustomName", this.customName);
+		}
+		
+		if (color != null)
+		{
+			nbt.setInteger("rgb", color.getRGB());
+		}
+		return nbt;
+	}
 
-        return null;
-    }
+	/**
+	 * Performs the check for adjacent chests to determine if this chest is double or not.
+	 */
+	public void checkForAdjacentChests()
+	{
 
-    private boolean isChestAt(BlockPos posIn)
-    {
-        if (this.world == null)
-        {
-            return false;
-        }
-        else
-        {
-            Block block = this.world.getBlockState(posIn).getBlock();
-            return block instanceof BlockColoredChest;
-        }
-    }
+		if (!this.adjacentChestChecked)
+		{
+			if (this.world == null || !this.world.isAreaLoaded(this.pos, 1)) return; // Forge: prevent loading unloaded chunks when checking neighbors
+			this.adjacentChestChecked = true;
+			this.adjacentChestZNeg = null;
+			this.adjacentChestXPos = null;
+			this.adjacentChestXNeg = null;
+			this.adjacentChestZPos = null;
 
-    /**
+			if (this.canConnectToBlock(this.getPos().west()))
+			{
+				this.adjacentChestXNeg = (TileEntityColoredChest) this.getWorld().getTileEntity(this.getPos().west());
+			}
+
+			if (this.canConnectToBlock(this.getPos().east()))
+			{
+				this.adjacentChestXPos = (TileEntityColoredChest) this.getWorld().getTileEntity(this.getPos().east());
+			}
+
+			if (this.canConnectToBlock(this.getPos().north()))
+			{
+				this.adjacentChestZNeg = (TileEntityColoredChest) this.getWorld().getTileEntity(this.getPos().north());
+			}
+
+			if (this.canConnectToBlock(this.getPos().south()))
+			{
+				this.adjacentChestZPos = (TileEntityColoredChest) this.getWorld().getTileEntity(this.getPos().south());
+			}
+
+			if (this.adjacentChestZNeg != null)
+			{
+				this.adjacentChestZNeg.getAdjacentChest(EnumFacing.WEST);
+			}
+
+			if (this.adjacentChestZPos != null)
+			{
+				this.adjacentChestZPos.getAdjacentChest(EnumFacing.EAST);
+			}
+
+			if (this.adjacentChestXPos != null)
+			{
+				this.adjacentChestXPos.getAdjacentChest(EnumFacing.NORTH);
+			}
+
+			if (this.adjacentChestXNeg != null)
+			{
+				this.adjacentChestXNeg.getAdjacentChest(EnumFacing.SOUTH);
+			}
+		}
+	}
+
+	@Nullable
+	protected TileEntityColoredChest getAdjacentChest(EnumFacing side)
+	{
+		BlockPos blockpos = this.pos.offset(side);
+
+		if (this.isChestAt(blockpos))
+		{
+			TileEntity tileentity = this.world.getTileEntity(blockpos);
+
+			if (tileentity instanceof TileEntityColoredChest)
+			{
+				TileEntityColoredChest tileentitychest = (TileEntityColoredChest)tileentity;
+				tileentitychest.setNeighbor(this, side.getOpposite());
+				return tileentitychest;
+			}
+		}
+
+		return null;
+	}
+	
+	 private boolean isChestAt(BlockPos posIn)
+	    {
+	        if (this.world == null)
+	        {
+	            return false;
+	        }
+	        else
+	        {
+	            Block block = this.world.getBlockState(posIn).getBlock();
+	            return block instanceof BlockColoredChest;
+	        }
+	    }
+
+	private boolean canConnectToBlock(BlockPos pos)
+	{
+		if (this.getWorld() != null)
+		{
+			TileEntity tile = this.getWorld().getTileEntity(pos);
+			return tile instanceof TileEntityColoredChest && ColoredChestsMod.doColorsMatch(((TileEntityColoredChest) tile).color,  color);
+		}
+		return false;
+	}
+	
+	/**
      * Like the old updateEntity(), except more generic.
      */
     public void update()
@@ -356,7 +450,7 @@ public class TileEntityColoredChest extends TileEntityLockableLoot implements IT
 
     public void closeInventory(EntityPlayer player)
     {
-        if (!player.isSpectator() && this.getBlockType() instanceof BlockChest)
+        if (!player.isSpectator() && this.getBlockType() instanceof BlockColoredChest)
         {
             --this.numPlayersUsing;
             this.world.addBlockEvent(this.pos, this.getBlockType(), 1, this.numPlayersUsing);
@@ -365,7 +459,7 @@ public class TileEntityColoredChest extends TileEntityLockableLoot implements IT
         }
     }
 
-    public net.minecraftforge.items.VanillaDoubleChestItemHandler doubleChestHandler;
+    public NonVanillaDoubleChestHandler doubleChestHandler;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -375,8 +469,8 @@ public class TileEntityColoredChest extends TileEntityLockableLoot implements IT
         if (capability == net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
         {
             if(doubleChestHandler == null || doubleChestHandler.needsRefresh())
-                doubleChestHandler = net.minecraftforge.items.VanillaDoubleChestItemHandler.get(this);
-            if (doubleChestHandler != null && doubleChestHandler != net.minecraftforge.items.VanillaDoubleChestItemHandler.NO_ADJACENT_CHESTS_INSTANCE)
+                doubleChestHandler = NonVanillaDoubleChestHandler.get(this);
+            if (doubleChestHandler != null && doubleChestHandler != NonVanillaDoubleChestHandler.NO_ADJACENT_CHESTS_INSTANCE)
                 return (T) doubleChestHandler;
         }
         return super.getCapability(capability, facing);
@@ -400,7 +494,7 @@ public class TileEntityColoredChest extends TileEntityLockableLoot implements IT
 
     public String getGuiID()
     {
-        return "coloredchest:coloredchest";
+        return "minecraft:chest";
     }
 
     public Container createContainer(InventoryPlayer playerInventory, EntityPlayer playerIn)
@@ -413,5 +507,5 @@ public class TileEntityColoredChest extends TileEntityLockableLoot implements IT
     {
         return this.chestContents;
     }
-	
+
 }

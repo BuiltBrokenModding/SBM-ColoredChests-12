@@ -1,7 +1,12 @@
 package its_meow.coloredchests.chest;
 
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.annotation.Nullable;
 
+import its_meow.coloredchests.BlockRegistry;
 import its_meow.coloredchests.ColoredChestsMod;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
@@ -12,6 +17,7 @@ import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.passive.EntityOcelot;
@@ -20,17 +26,22 @@ import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.inventory.InventoryLargeChest;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemDye;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.stats.StatList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.Mirror;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.ILockableContainer;
 import net.minecraft.world.World;
@@ -39,11 +50,10 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class BlockColoredChest extends BlockContainer {
 
-	public final int color;
-
-	protected BlockColoredChest(Material materialIn, int color) {
+	public BlockColoredChest(Material materialIn) {
 		super(Material.WOOD);
-		this.color = color;
+		this.setRegistryName("coloredchest");
+		this.setUnlocalizedName("coloredchest");
 		this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
 		this.setCreativeTab(ColoredChestsMod.tab);
 	}
@@ -83,23 +93,50 @@ public class BlockColoredChest extends BlockContainer {
 		return EnumBlockRenderType.ENTITYBLOCK_ANIMATED;
 	}
 
+
+
+	@Override
+	public void getSubBlocks(CreativeTabs itemIn, NonNullList<ItemStack> items) {
+		for (int i = 0; i < ItemDye.DYE_COLORS.length; i++)
+		{
+			ItemStack stack = new ItemStack(BlockRegistry.blockChest);
+			stack.setTagCompound(new NBTTagCompound());
+			stack.getTagCompound().setInteger("rgb", ItemDye.DYE_COLORS[i]);
+			items.add(stack);
+		}
+	}
+
 	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos)
 	{
-		if (source.getBlockState(pos.north()).getBlock() == this)
+		Color color = null;
+		TileEntity tile = source.getTileEntity(pos);
+		if (tile instanceof TileEntityColoredChest)
+		{
+			color = ((TileEntityColoredChest) tile).color;
+		}
+		boolean block = isMatchingChest(source, pos.north(), color);
+		boolean block1 = isMatchingChest(source, pos.south(), color);
+		boolean block2 = isMatchingChest(source, pos.west(), color);
+		boolean block3 = isMatchingChest(source, pos.east(), color);
+		if (block)
 		{
 			return NORTH_CHEST_AABB;
 		}
-		else if (source.getBlockState(pos.south()).getBlock() == this)
+		else if (block1)
 		{
 			return SOUTH_CHEST_AABB;
 		}
-		else if (source.getBlockState(pos.west()).getBlock() == this)
+		else if (block2)
 		{
 			return WEST_CHEST_AABB;
 		}
-		else
+		else if (block3)
 		{
-			return source.getBlockState(pos.east()).getBlock() == this ? EAST_CHEST_AABB : NOT_CONNECTED_AABB;
+			return EAST_CHEST_AABB;
+		} 
+		else 
+		{
+			return NOT_CONNECTED_AABB;
 		}
 	}
 
@@ -109,15 +146,18 @@ public class BlockColoredChest extends BlockContainer {
 	public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state)
 	{
 		this.checkForSurroundingChests(worldIn, pos, state);
-
-		for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL)
+		TileEntity tile = worldIn.getTileEntity(pos);
+		if (tile instanceof TileEntityColoredChest)
 		{
-			BlockPos blockpos = pos.offset(enumfacing);
-			IBlockState iblockstate = worldIn.getBlockState(blockpos);
-
-			if (iblockstate.getBlock() == this)
+			for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL)
 			{
-				this.checkForSurroundingChests(worldIn, blockpos, iblockstate);
+				BlockPos blockpos = pos.offset(enumfacing);
+				IBlockState iblockstate = worldIn.getBlockState(blockpos);
+				Color color = ((TileEntityColoredChest) tile).color;
+				if (isMatchingChest(worldIn, blockpos, color))
+				{
+					this.checkForSurroundingChests(worldIn, blockpos, iblockstate);
+				}
 			}
 		}
 	}
@@ -134,22 +174,33 @@ public class BlockColoredChest extends BlockContainer {
 	/**
 	 * Called by ItemBlocks after a block is set in the world, to allow post-place logic
 	 */
-	public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
+	public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
 	{
+		Color color = null;
+		if (stack.getTagCompound() != null && stack.getTagCompound().hasKey("rgb"))
+		{
+			color = ColoredChestsMod.getColor(stack.getTagCompound().getInteger("rgb"));
+			((TileEntityColoredChest) world.getTileEntity(pos)).color = color;
+		}
+		int x = pos.getX();
+		int y = pos.getY();
+		int z = pos.getZ();
+		//System.out.println("Color of placed chest " + color);
+		boolean flag = isMatchingChest(world, x, y, z - 1, color);
+		boolean flag1 = isMatchingChest(world, x, y, z + 1, color);
+		boolean flag2 = isMatchingChest(world, x - 1, y, z, color);
+		boolean flag3 = isMatchingChest(world, x + 1, y, z, color);
+
 		EnumFacing enumfacing = EnumFacing.getHorizontal(MathHelper.floor((double)(placer.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3).getOpposite();
 		state = state.withProperty(FACING, enumfacing);
 		BlockPos blockpos = pos.north();
 		BlockPos blockpos1 = pos.south();
 		BlockPos blockpos2 = pos.west();
 		BlockPos blockpos3 = pos.east();
-		boolean flag = this == worldIn.getBlockState(blockpos).getBlock();
-		boolean flag1 = this == worldIn.getBlockState(blockpos1).getBlock();
-		boolean flag2 = this == worldIn.getBlockState(blockpos2).getBlock();
-		boolean flag3 = this == worldIn.getBlockState(blockpos3).getBlock();
 
 		if (!flag && !flag1 && !flag2 && !flag3)
 		{
-			worldIn.setBlockState(pos, state, 3);
+			world.setBlockState(pos, state, 3);
 		}
 		else if (enumfacing.getAxis() != EnumFacing.Axis.X || !flag && !flag1)
 		{
@@ -157,39 +208,47 @@ public class BlockColoredChest extends BlockContainer {
 			{
 				if (flag2)
 				{
-					worldIn.setBlockState(blockpos2, state, 3);
+					world.setBlockState(blockpos2, state, 3);
 				}
 				else
 				{
-					worldIn.setBlockState(blockpos3, state, 3);
+					world.setBlockState(blockpos3, state, 3);
 				}
 
-				worldIn.setBlockState(pos, state, 3);
+				world.setBlockState(pos, state, 3);
 			}
 		}
 		else
 		{
 			if (flag)
 			{
-				worldIn.setBlockState(blockpos, state, 3);
+				world.setBlockState(blockpos, state, 3);
 			}
 			else
 			{
-				worldIn.setBlockState(blockpos1, state, 3);
+				world.setBlockState(blockpos1, state, 3);
 			}
 
-			worldIn.setBlockState(pos, state, 3);
+			world.setBlockState(pos, state, 3);
 		}
 
 		if (stack.hasDisplayName())
 		{
-			TileEntity tileentity = worldIn.getTileEntity(pos);
-
-			if (tileentity instanceof TileEntityColoredChest)
-			{
-				((TileEntityColoredChest)tileentity).setCustomName(stack.getDisplayName());
-			}
+			((TileEntityColoredChest) world.getTileEntity(pos)).setCustomName(stack.getDisplayName());
 		}
+	}
+
+	public boolean isMatchingChest(IBlockAccess world, BlockPos pos, Color color)
+	{
+		Block block = world.getBlockState(pos).getBlock();
+		TileEntity tile = world.getTileEntity(pos);
+		return block == this && tile instanceof TileEntityColoredChest && ColoredChestsMod.doColorsMatch(color, ((TileEntityColoredChest) tile).color);
+	}
+
+	public boolean isMatchingChest(IBlockAccess world, int x, int y, int z, Color color)
+	{
+		BlockPos pos = new BlockPos(x,y,z);
+		return isMatchingChest(world, pos, color);
 	}
 
 	public IBlockState checkForSurroundingChests(World worldIn, BlockPos pos, IBlockState state)
@@ -335,58 +394,29 @@ public class BlockColoredChest extends BlockContainer {
 		}
 	}
 
+
 	/**
 	 * Checks if this block can be placed exactly at the given position.
 	 */
 	public boolean canPlaceBlockAt(World worldIn, BlockPos pos)
 	{
-		int i = 0;
-		BlockPos blockpos = pos.west();
-		BlockPos blockpos1 = pos.east();
-		BlockPos blockpos2 = pos.north();
-		BlockPos blockpos3 = pos.south();
-
-		if (worldIn.getBlockState(blockpos).getBlock() == this)
-		{
-			if (this.isDoubleChest(worldIn, blockpos))
-			{
-				return false;
-			}
-
-			++i;
-		}
-
-		if (worldIn.getBlockState(blockpos1).getBlock() == this)
-		{
-			if (this.isDoubleChest(worldIn, blockpos1))
-			{
-				return false;
-			}
-
-			++i;
-		}
-
-		if (worldIn.getBlockState(blockpos2).getBlock() == this)
-		{
-			if (this.isDoubleChest(worldIn, blockpos2))
-			{
-				return false;
-			}
-
-			++i;
-		}
-
-		if (worldIn.getBlockState(blockpos3).getBlock() == this)
-		{
-			if (this.isDoubleChest(worldIn, blockpos3))
-			{
-				return false;
-			}
-
-			++i;
-		}
-
-		return i <= 1;
+		for (int b = 2; b < EnumFacing.HORIZONTALS.length; b++)
+        {
+			EnumFacing dir = EnumFacing.HORIZONTALS[b];
+            int x = dir.getFrontOffsetX() + pos.getX();
+            int y = dir.getFrontOffsetY() + pos.getY();
+            int z = dir.getFrontOffsetZ() + pos.getZ();
+            TileEntity tile = worldIn.getTileEntity(new BlockPos(x,y,z));
+            if (worldIn.getBlockState(new BlockPos(dir.getFrontOffsetX() + x, dir.getFrontOffsetY() + y, dir.getFrontOffsetZ() + z)).getBlock() == this && tile instanceof TileEntityColoredChest)
+            {
+                Color color = ((TileEntityColoredChest) tile).color;
+                if (isMatchingChest(worldIn, x, y, z - 1, color) || isMatchingChest(worldIn, x, y, z + 1, color) || isMatchingChest(worldIn, x - 1, y, z, color) || isMatchingChest(worldIn, x + 1, y, z, color))
+                {
+                    return false;
+                }
+            }
+        }
+return true;
 	}
 
 	private boolean isDoubleChest(World worldIn, BlockPos pos)
@@ -423,22 +453,6 @@ public class BlockColoredChest extends BlockContainer {
 		{
 			tileentity.updateContainingBlockInfo();
 		}
-	}
-
-	/**
-	 * Called serverside after this block is replaced with another in Chunk, but before the Tile Entity is updated
-	 */
-	public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
-	{
-		TileEntity tileentity = worldIn.getTileEntity(pos);
-
-		if (tileentity instanceof IInventory)
-		{
-			InventoryHelper.dropInventoryItems(worldIn, pos, (IInventory)tileentity);
-			worldIn.updateComparatorOutputLevel(pos, this);
-		}
-
-		super.breakBlock(worldIn, pos, state);
 	}
 
 	/**
@@ -572,6 +586,56 @@ public class BlockColoredChest extends BlockContainer {
 		return false;
 	}
 
+	Color colorTempCache;
+
+	@Override
+	public void breakBlock(World world, BlockPos pos, IBlockState state)
+	{
+		TileEntityColoredChest tile = (TileEntityColoredChest) world.getTileEntity(pos);
+
+		if (tile != null)
+		{
+
+			if (tile instanceof IInventory)
+			{
+				InventoryHelper.dropInventoryItems(world, pos, (IInventory)tile);
+				world.updateComparatorOutputLevel(pos, this);
+			}
+
+			colorTempCache = tile.color;
+		}
+
+		super.breakBlock(world, pos, state);
+	}
+
+
+
+	@Override
+	public List<ItemStack> getDrops(IBlockAccess world, BlockPos pos, IBlockState state, int fortune) {
+		ArrayList<ItemStack> ret = new ArrayList<ItemStack>();
+		ret.add(new ItemStack(this, 1, this.getMetaFromState(state)));
+		if (colorTempCache != null)
+		{
+			ret.get(0).setTagCompound(new NBTTagCompound());
+			ret.get(0).getTagCompound().setInteger("rgb", colorTempCache.getRGB());
+		}
+		return ret;
+	}
+
+
+	@Override
+	public ItemStack getPickBlock(IBlockState state, RayTraceResult target, World world, BlockPos pos,
+			EntityPlayer player) {
+		ItemStack stack = new ItemStack(this, 1, this.getMetaFromState(world.getBlockState(pos)));
+		TileEntity tile = world.getTileEntity(pos);
+		if (tile instanceof TileEntityColoredChest && ((TileEntityColoredChest) tile).color != null)
+		{
+			stack.setTagCompound(new NBTTagCompound());
+			stack.getTagCompound().setInteger("rgb", ((TileEntityColoredChest) tile).color.getRGB());
+		}
+		return stack;
+	}
+
 	public boolean hasComparatorInputOverride(IBlockState state)
 	{
 		return true;
@@ -657,7 +721,7 @@ public class BlockColoredChest extends BlockContainer {
 
 	@Override
 	public TileEntity createNewTileEntity(World worldIn, int meta) {
-		return new TileEntityColoredChest(color);
+		return new TileEntityColoredChest();
 	}
 
 }
