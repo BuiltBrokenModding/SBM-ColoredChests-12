@@ -30,11 +30,12 @@ import net.minecraftforge.registries.IForgeRegistry;
 @ObjectHolder(Ref.MOD_ID)
 public class BlockRegistry {
 
+	public static ArrayList<Block> blocksList = new ArrayList<Block>();
+	public static ArrayList<ItemBlock> itemsList = new ArrayList<ItemBlock>();
+	
 	@Mod.EventBusSubscriber
 	public static class RegistrationHandler {
 		public static final Set<ItemBlock> ITEM_BLOCKS = new HashSet<>();
-		
-		public static ArrayList<Block> blocksList = new ArrayList<Block>();
 
 		/**
 		 * Register this mod's {@link Block}s.
@@ -62,8 +63,6 @@ public class BlockRegistry {
 			GameRegistry.registerTileEntity(TileEntityColoredChest.class, new ResourceLocation(Ref.MOD_ID, "coloredchesttileentity"));
 		}
 
-		public static ArrayList<ItemBlock> itemsList = new ArrayList<ItemBlock>();
-
 		/**
 		 * Register this mod's {@link ItemBlock}s.
 		 *
@@ -74,11 +73,7 @@ public class BlockRegistry {
 			final IForgeRegistry<Item> registry = event.getRegistry();
 		
 			
-			for(int i = 0; i < EnumDyeColor.values().length; i++) {
-				int colorI = EnumDyeColor.byDyeDamage(i).getColorValue();
-				Color color = ColoredChestsMod.getColor(colorI);
-				String name = EnumDyeColor.byDyeDamage(i).getName();
-				BlockColoredChest block = new BlockColoredChest(color, name);
+			for(Block block : blocksList) {
 				itemsList.add(new ItemBlockChest(block));
 			}
 			

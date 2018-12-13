@@ -1,13 +1,7 @@
 package its_meow.coloredchests.chest;
 
-import java.awt.Color;
-
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-
 import its_meow.coloredchests.Ref;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockChest;
 import net.minecraft.client.model.ModelChest;
 import net.minecraft.client.model.ModelLargeChest;
 import net.minecraft.client.renderer.GlStateManager;
@@ -100,14 +94,6 @@ public class RenderChest extends TileEntitySpecialRenderer<TileEntityColoredChes
             {
                 GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
             }
-            
-            if (te.color != null)
-			{
-				float r = (float)te.color.getRed() / 255f;
-				float g = (float)te.color.getGreen() / 255f;
-				float b = (float)te.color.getBlue() / 255f;
-				GL11.glColor3f(r, g, b);
-			}
 
             GlStateManager.translate((float)x, (float)y + 1.0F, (float)z + 1.0F);
             GlStateManager.scale(1.0F, -1.0F, -1.0F);
@@ -171,7 +157,15 @@ public class RenderChest extends TileEntitySpecialRenderer<TileEntityColoredChes
             f = 1.0F - f;
             f = 1.0F - f * f * f;
             modelchest.chestLid.rotateAngleX = -(f * ((float)Math.PI / 2F));
+            if (te.color != null)
+			{
+				float r = (float)te.color.getRed() / 255f;
+				float g = (float)te.color.getGreen() / 255f;
+				float b = (float)te.color.getBlue() / 255f;
+				GlStateManager.color(r, g, b);
+			}
             modelchest.renderAll();
+            GlStateManager.color(1.0F, 1.0F, 1.0F);
             GlStateManager.disableRescaleNormal();
             GlStateManager.popMatrix();
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);

@@ -55,7 +55,7 @@ public class BlockColoredChest extends BlockContainer
     {
         super(Material.WOOD);
         this.setRegistryName("coloredchest" + colorNameIn);
-        this.setUnlocalizedName("coloredchest" + colorNameIn);
+        this.setUnlocalizedName("coloredchest");
         this.color = colorIn;
         this.colorName = colorNameIn;
         this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
