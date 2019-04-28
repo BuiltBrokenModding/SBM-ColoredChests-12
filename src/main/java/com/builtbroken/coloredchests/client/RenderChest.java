@@ -1,6 +1,9 @@
-package its_meow.coloredchests.chest;
+package com.builtbroken.coloredchests.client;
 
-import its_meow.coloredchests.Ref;
+import com.builtbroken.coloredchests.ColoredChestsMod;
+import com.builtbroken.coloredchests.chest.BlockColoredChest;
+import com.builtbroken.coloredchests.chest.TileEntityColoredChest;
+
 import net.minecraft.block.Block;
 import net.minecraft.client.model.ModelChest;
 import net.minecraft.client.model.ModelLargeChest;
@@ -13,8 +16,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class RenderChest extends TileEntitySpecialRenderer<TileEntityColoredChest> {
 
-	public static final ResourceLocation TEXTURE_NORMAL_DOUBLE = new ResourceLocation(Ref.MOD_ID, "textures/grey_scale_double.png");
-	public static final ResourceLocation TEXTURE_NORMAL = new ResourceLocation(Ref.MOD_ID, "textures/grey_scale.png");
+	public static final ResourceLocation TEXTURE_NORMAL_DOUBLE = new ResourceLocation(ColoredChestsMod.MOD_ID, "textures/grey_scale_double.png");
+	public static final ResourceLocation TEXTURE_NORMAL = new ResourceLocation(ColoredChestsMod.MOD_ID, "textures/grey_scale.png");
 
 	public static final ModelChest modelChest = new ModelChest();
 	public static final ModelChest modelLargeChest = new ModelLargeChest();
@@ -53,7 +56,7 @@ public class RenderChest extends TileEntitySpecialRenderer<TileEntityColoredChes
 
             if (te.adjacentChestXPos == null && te.adjacentChestZPos == null)
             {
-                modelchest = this.modelChest;
+                modelchest = RenderChest.modelChest;
 
                 if (destroyStage >= 0)
                 {
@@ -71,7 +74,7 @@ public class RenderChest extends TileEntitySpecialRenderer<TileEntityColoredChes
             }
             else
             {
-                modelchest = this.modelLargeChest;
+                modelchest = RenderChest.modelLargeChest;
 
                 if (destroyStage >= 0)
                 {

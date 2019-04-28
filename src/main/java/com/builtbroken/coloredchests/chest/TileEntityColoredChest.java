@@ -1,10 +1,11 @@
-package its_meow.coloredchests.chest;
+package com.builtbroken.coloredchests.chest;
 
 import java.awt.Color;
 
 import javax.annotation.Nullable;
 
-import its_meow.coloredchests.ColoredChestsMod;
+import com.builtbroken.coloredchests.ColoredChestsMod;
+
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -24,9 +25,6 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.SoundCategory;
-import net.minecraft.util.datafix.DataFixer;
-import net.minecraft.util.datafix.FixTypes;
-import net.minecraft.util.datafix.walkers.ItemStackDataLists;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 
@@ -113,11 +111,6 @@ public class TileEntityColoredChest extends TileEntityLockableLoot implements IT
 	public String getName()
 	{
 		return this.hasCustomName() ? this.customName : "container.chest";
-	}
-
-	public static void registerFixesChest(DataFixer fixer)
-	{
-		fixer.registerWalker(FixTypes.BLOCK_ENTITY, new ItemStackDataLists(TileEntityColoredChest.class, new String[] {"Items"}));
 	}
 
 	public void readFromNBT(NBTTagCompound compound)
@@ -270,7 +263,14 @@ public class TileEntityColoredChest extends TileEntityLockableLoot implements IT
 		else
 		{
 			Block block = this.world.getBlockState(posIn).getBlock();
-			return block instanceof BlockColoredChest && ColoredChestsMod.doColorsMatch(((BlockColoredChest) block).color, this.color);
+			TileEntity te = this.world.getTileEntity(posIn);
+			if(block.hasTileEntity() && block instanceof BlockColoredChest) {
+			    if(te != null && te instanceof TileEntityColoredChest) {
+			        TileEntityColoredChest tec = (TileEntityColoredChest) te;
+			        return block instanceof BlockColoredChest && ColoredChestsMod.doColorsMatch(tec.color, this.color);
+			    }
+			}
+			return false;
 		}
 	}
 
