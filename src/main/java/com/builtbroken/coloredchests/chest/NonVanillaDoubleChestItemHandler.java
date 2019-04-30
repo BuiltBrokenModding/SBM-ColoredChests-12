@@ -1,4 +1,4 @@
-package its_meow.coloredchests.chest;
+package com.builtbroken.coloredchests.chest;
 
 import java.lang.ref.WeakReference;
 

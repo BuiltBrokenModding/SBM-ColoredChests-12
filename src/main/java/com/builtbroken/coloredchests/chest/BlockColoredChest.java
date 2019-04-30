@@ -1,13 +1,15 @@
-package its_meow.coloredchests.chest;
+package com.builtbroken.coloredchests.chest;
 
 import java.awt.Color;
 
 import javax.annotation.Nullable;
 
-import its_meow.coloredchests.ColoredChestsMod;
+import com.builtbroken.coloredchests.ColoredChestsMod;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.BlockHorizontal;
+import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyDirection;
@@ -48,8 +50,7 @@ public class BlockColoredChest extends BlockContainer
     protected static final AxisAlignedBB EAST_CHEST_AABB = new AxisAlignedBB(0.0625D, 0.0D, 0.0625D, 1.0D, 0.875D, 0.9375D);
     protected static final AxisAlignedBB NOT_CONNECTED_AABB = new AxisAlignedBB(0.0625D, 0.0D, 0.0625D, 0.9375D, 0.875D, 0.9375D);
     
-    public final Color color;
-    public final String colorName;
+    public Color color;
     
     public BlockColoredChest(Color colorIn, String colorNameIn)
     {
@@ -57,10 +58,11 @@ public class BlockColoredChest extends BlockContainer
         this.setRegistryName("coloredchest" + colorNameIn);
         this.setUnlocalizedName("coloredchest");
         this.color = colorIn;
-        this.colorName = colorNameIn;
         this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
         this.setCreativeTab(ColoredChestsMod.tab);
-    }
+        this.setSoundType(SoundType.WOOD);
+        this.setHardness(1F);
+}
 
     /**
      * Used to determine ambient occlusion and culling when rebuilding chunks for render
@@ -490,7 +492,7 @@ public class BlockColoredChest extends BlockContainer
         {
             ILockableContainer ilockablecontainer = (TileEntityColoredChest)tileentity;
 
-            if (!allowBlocking && this.isBlocked(worldIn, pos))
+            if (!allowBlocking && BlockColoredChest.isBlocked(worldIn, pos))
             {
                 return null;
             }
@@ -503,7 +505,7 @@ public class BlockColoredChest extends BlockContainer
 
                     if (block == this)
                     {
-                        if (!allowBlocking && this.isBlocked(worldIn, blockpos)) // Forge: fix MC-99321
+                        if (!allowBlocking && BlockColoredChest.isBlocked(worldIn, blockpos)) // Forge: fix MC-99321
                         {
                             return null;
                         }
@@ -570,17 +572,17 @@ public class BlockColoredChest extends BlockContainer
         return side == EnumFacing.UP ? blockState.getWeakPower(blockAccess, pos, side) : 0;
     }
 
-    private boolean isBlocked(World worldIn, BlockPos pos)
+    private static boolean isBlocked(World worldIn, BlockPos pos)
     {
-        return this.isBelowSolidBlock(worldIn, pos) || this.isOcelotSittingOnChest(worldIn, pos);
+        return BlockColoredChest.isBelowSolidBlock(worldIn, pos) || BlockColoredChest.isOcelotSittingOnChest(worldIn, pos);
     }
-
-    private boolean isBelowSolidBlock(World worldIn, BlockPos pos)
+    
+    private static boolean isBelowSolidBlock(World worldIn, BlockPos pos)
     {
         return worldIn.getBlockState(pos.up()).doesSideBlockChestOpening(worldIn, pos.up(), EnumFacing.DOWN);
     }
 
-    private boolean isOcelotSittingOnChest(World worldIn, BlockPos pos)
+    private static boolean isOcelotSittingOnChest(World worldIn, BlockPos pos)
     {
         for (Entity entity : worldIn.getEntitiesWithinAABB(EntityOcelot.class, new AxisAlignedBB((double)pos.getX(), (double)(pos.getY() + 1), (double)pos.getZ(), (double)(pos.getX() + 1), (double)(pos.getY() + 2), (double)(pos.getZ() + 1))))
         {
